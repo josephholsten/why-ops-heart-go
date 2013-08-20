@@ -1,0 +1,391 @@
+Why ops <3 go
+
+01:00 20 August 2013
+Tags: ops, devops, go
+
+Joseph Anthony Pasquale Holsten
+Info Janitor, Simply Measured
+joseph@josephholsten.com
+http://josephholsten.com/
+@josephholsten
+
+* who are you?
+
+* let's go
+
+.image http://1.bp.blogspot.com/-ZMZJ61vE1nQ/UhFOJ_moA2I/AAAAAAABWKw/qWJ2OZOBt8o/s1600/go-at-google-io-2011-videos_gopher.jpg
+
+* versus
+
+- c, c++
+- java, c#
+- python, ruby, perl, php
+- erlang, node/js
+
+* compiled, c-like
+
+- garbage collected
+- statically typed
+- structs + functions
+
+* syntax
+
+	package main
+	
+	import "fmt"
+	
+	func adder(augend, addend int) (sum int) {
+		return augend + addend
+	}
+	
+	func main() {
+		xs := []int{2, 3, 5, 7, 11, 13}
+		n := 0
+		for i, x := range xs {
+			n += x
+			fmt.Printf("%d: %d\n", i, n)
+		}
+	}
+
+* concurrency
+
+- comunicating sequential processes (csp)
+- goroutines
+- channels
+
+* arguably object oriented
+
+- inhieritance (embedded structs)
+- encapsulation (attributes & methods)
+- polymorphism (interfaces)
+
+* packages
+
+- dependencies
+- encapsulation
+- namespacing
+
+* other things
+
+- array slices
+- closures
+- defer
+- multiple return values
+- panic/recover
+- struct literals
+- maps
+- cgo
+
+* ...
+
+
+
+* an ops perspective
+
+* have you ever?
+
+- set up a home server?
+- had the hard drive fail?
+- have an update go wrong?
+- have a dependency conflict when installing?
+- have it become mysteriously slow?
+
+* an ops perspective
+
+- boring is good
+- abstractions have already leaked
+- we already have to use sledgehammers
+
+* a day in the life
+
+* building
+
+- dependencies
+- automation
+- testing
+
+* dependencies
+
+    $ go get
+
+built in support for hosted repos
+
+	import "github.com/user/project"               # git
+	import "github.com/user/project/sub/directory"
+	import "bitbucket.org/user/project"            # git, hg
+	import "code.google.com/p/project"             # git, hg, svn
+	import "launchpad.net/project"                 # bzr
+	import "launchpad.net/~user/project/branch"
+
+doesn't support locking to revisions
+https://github.com/vividcortex/johnny-deps
+
+	$ cat Godeps
+	github.com/VividCortex/ewma       v1.0
+	github.com/VividCortex/robustly   v1.1
+
+
+* automation
+
+per travis
+
+	$ go get -d -v . # only download
+	$ go build -v .
+	$ go test -v 
+
+
+* deployment
+
+- install/config
+- roll forward
+- signals & services 
+
+* installation
+
+just drop it
+
+* configuration
+
+- json (used by docker, packer, lumberjack, camlistore)
+- flag (used by nsq, doozerd, etcd)
+- github.com/bbangert/toml (used by hekad)
+- lua plugins (used by hekad)
+
+* signals
+
+	package main
+	
+	import (
+		"fmt"
+		"os"
+		"os/signal"
+		"time"
+	)
+	
+	func main() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, os.Kill)
+		go func() {
+			<-c
+			fmt.Println("Received Interrupt")
+			os.Exit(1)
+		}()
+	
+		for {
+			time.Sleep(10 * time.Second)
+		}
+	}
+
+* zero downtime restarts
+
+github.com/rcrowley/goagain
++
+github.com/braintree/manners
+
+Or
+
+github.com/zimbatm/socketmaster
+
+* services
+
+- not perfect yet
+- don't daemonize yourself
+- upstart, systemd, smf, runit
+
+* congrats!
+
+* ...
+
+* oh, no. 
+
+* what's the problem?
+
+- crashing
+- incorrect results
+- races or deadlocks
+- performance
+
+* documentation
+	
+	$ godoc fmt Printf
+	PACKAGE DOCUMENTATION
+	
+	package fmt
+	    import "fmt"
+	
+	
+	
+	FUNCTIONS
+	
+	func Printf(format string, a ...interface{}) (n int, err error)
+	    Printf formats according to a format specifier and writes to standard
+	    output. It returns the number of bytes written and any write error
+	    encountered.
+	
+
+* documentation
+
+http://godoc.org
+
+.image godoc-fmt.jpg
+
+* static analysis
+
+	$ go fmt # pretty print, print warnings
+	$ go vet # lint for common code smells
+	$ go fix # rewrite code to newer apis
+
+* printf
+
+- fmt
+	fmt.Print(")
+	fmt.Printf("ooh, an error: %v", err)
+
+- github.com/davecgh/go-spew: deep pretty print
+
+	(main.Foo) {
+	 unexportedField: (*main.Bar)(0xf84002e210)({
+	  flag: (main.Flag) flagTwo,
+	  data: (uintptr) <nil>
+	 }),
+	 ExportedField: (map[interface {}]interface {}) {
+	  (string) "one": (bool) true
+	 }
+	}
+	([]uint8) {
+	 00000000  11 12 13 14 15 16 17 18  19 1a 1b 1c 1d 1e 1f 20  |............... |
+	 00000010  21 22 23 24 25 26 27 28  29 2a 2b 2c 2d 2e 2f 30  |!"#$%&'()*+,-./0|
+	 00000020  31 32                                             |12|
+	}
+
+
+* logging
+
+- log
+
+	log.Fatalf("Error whorling frobs: %v", err)
+
+- syslog: totally different api from log
+- github.com/golang/glog
+
+	if glog.V(2) {
+		glog.Info("Starting transaction...")
+	}
+
+
+* metrics
+
+- expvar: expose stats via http
+- runtime.Memstats: allocator stats
+- github.com/cactus/go-statsd-client: statsd
+- github.com/rcrowley/go-metrics: ala coda hale
+
+* testing
+
+	$ go test
+
+- memprofile
+- cpuprofile
+- bench
+
+mocking
+
+- code.google.com/p/gomock/gomock: via code generation
+
+* profiling
+
+perftools' pprof: http://blog.golang.org/profiling-go-programs
+
+Add this line
+
+	pprof.StartCPUProfile(file)
+
+Run the profiler
+
+	$ go tool pprof hello-world hello-world.prof
+	Welcome to pprof!  For help, type 'help'.
+	(pprof) web
+
+* profiling
+
+The profiling tools are awesome. It's very nice to be able to load up program's profile output, type "web" at the command line, and then get a browser window showing you a graph of where all you CPU cycles are being spent, and where you memory allocations are happening.
+- rob miller
+
+.image http://blog.golang.org/profiling-go-programs_havlak1a-75.png
+
+* debugging
+
+gdb http://golang.org/doc/gdb
+
+(on os x: you'll need gdb 7+)
+
+	$ gdb test 
+	Reading symbols from /Users/joseph/src/com/golang/test...done.
+	(gdb) source $GOROOT/go/src/pkg/runtime/runtime-gdb.py
+	(gdb) start
+	(gdb) advance 13
+	(gdb) info locals
+	xs =  []int
+	n = 5
+	(gdb) info goroutines
+	* 1  running syscall.Syscall
+	  2 runnable runtime.goexit
+
+* race detection
+http://blog.golang.org/race-detector
+http://golang.org/doc/articles/race_detector.html
+
+	# always use this
+	$ go test -race
+
+* race detection
+	
+	$ go get -race code.google.com/p/go.blog/support/racy
+	$ racy
+	Hello, world
+	==================
+	WARNING: DATA RACE
+	Write by goroutine 4:
+	  main.func·001()
+	      $GOPATH/src/code.google.com/p/go.blog/support/racy/racy.go:18 +0x81
+	
+	Previous read by goroutine 1:
+	  main.main()
+	      $GOPATH/src/code.google.com/p/go.blog/support/racy/racy.go:21 +0x242
+	
+	Goroutine 4 (running) created at:
+	  main.main()
+	      $GOPATH/src/code.google.com/p/go.blog/support/racy/racy.go:20 +0x17b
+	
+	Goroutine 1 (running) created at:
+	  _rt0_amd64()
+	      $GOROOT/src/pkg/runtime/asm_amd64.s:87 +0x106
+	
+	==================
+	Found 1 data race(s)
+
+
+* The reason I'm here:
+
+docker - container toolkit
+packer - vm image builder
+etcd - config service
+heka - log aggregator
+nsq - distributed queue
+doozer - highly consistant store
+lumberjack - log shipper
+
+
+* conclusion
+
+- not perfect
+- good for people who like hammers
+- for second-systems, not prototypes
+
+* thanks
+
+- Jordan Sissel
+- Rob Miller
+- John E. Vincent
+- Justin Huff
+- Mitchell Hashimoto
