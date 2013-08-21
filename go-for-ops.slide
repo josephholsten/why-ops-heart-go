@@ -55,7 +55,7 @@ http://josephholsten.com/
 
 * arguably object oriented
 
-- inhieritance (embedded structs)
+- inheritance (embedded structs)
 - encapsulation (attributes & methods)
 - polymorphism (interfaces)
 
