@@ -8,3 +8,8 @@ http://www.youtube.com/watch?v=almOzi2Z05w
 
 The slides are available online thanks to talks.godoc.org:
 http://talks.godoc.org/github.com/josephholsten/why-ops-heart-go/go-for-ops.slide
+
+Note
+====
+
+I gave an updated version of this talk in Vancouver, you'll find it at https://github.com/josephholsten/prod-ready-go-svcs
